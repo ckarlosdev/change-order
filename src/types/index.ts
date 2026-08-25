@@ -14,7 +14,8 @@ export type Signature = {
   id: number;
   signatureRole: string;
   filePath: string;
-}
+  signatureName: string;
+};
 
 export type Task = {
   temporalId: string;
@@ -86,4 +87,10 @@ export type Employee = {
   lastName: string;
   status: string;
   title: string;
+};
+
+export type ModalConfiguration = {
+  title: string;
+  body: string;
+  variant: string;
 };

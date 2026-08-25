@@ -15,11 +15,17 @@ import { GiMineTruck } from "react-icons/gi";
 type Props = {};
 
 const EQUIPMENT_SUGGESTIONS = [
-  "Skid Loader",
+  "Backhoe Loader",
+  "Boom Lift",
+  "Bulldozer",
+  "Compactor",
+  "Dingo",
   "Excavator",
-  "Backhoe",
-  "Dump Truck",
-  "Generator",
+  "Forklift",
+  "Scissor Lift",
+  "Skid Loader",
+  "Telehandler",
+  "Wheel Loader",
 ];
 
 function EquipmentModal({}: Props) {
@@ -90,10 +96,27 @@ function EquipmentModal({}: Props) {
                     style={{ textAlign: "center", fontWeight: "bold" }}
                     type="number"
                     min="1"
-                    value={equipmentData.quantity}
-                    onChange={(e) =>
-                      setEquipmentData("quantity", Number(e.target.value))
+                    // value={equipmentData.quantity}
+                    value={
+                      equipmentData.quantity === 0
+                        ? ""
+                        : (equipmentData.quantity ?? "")
                     }
+                    // onChange={(e) =>
+                    //   setEquipmentData("quantity", Number(e.target.value))
+                    // }
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      if (inputValue === "") {
+                        setEquipmentData("quantity", 0);
+                        return;
+                      }
+
+                      const numValue = Number(inputValue);
+                      if (numValue >= 0) {
+                        setEquipmentData("quantity", numValue);
+                      }
+                    }}
                     // onKeyDown={(e) => e.key === "Enter" && handleAdd()} // UX: Agregar con Enter
                   />
                 </Form.Group>

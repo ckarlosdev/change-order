@@ -3,7 +3,6 @@ import {
   Col,
   FloatingLabel,
   Form,
-  InputGroup,
   ListGroup,
   Modal,
   Row,
@@ -11,7 +10,7 @@ import {
 import useModalsStore from "../../stores/useModalsStore";
 import useTaskStore from "../../stores/useTaskStore";
 import { FaPlus, FaRecycle, FaRulerCombined, FaTrash } from "react-icons/fa";
-import { PiShippingContainerFill, PiShippingContainerLight } from "react-icons/pi";
+import { PiShippingContainerFill } from "react-icons/pi";
 
 type Props = {};
 
@@ -138,10 +137,27 @@ function DumpsterModal({}: Props) {
                     min="1"
                     className="text-center fw-bold border-secondary-subtle"
                     placeholder="0"
-                    value={dumpsterData.quantity}
-                    onChange={(e) =>
-                      setDumpsterData("quantity", Number(e.target.value))
+                    // value={dumpsterData.quantity || 1}
+                    value={
+                      dumpsterData.quantity === 0
+                        ? ""
+                        : (dumpsterData.quantity ?? "")
                     }
+                    // onChange={(e) =>
+                    //   setDumpsterData("quantity", Number(e.target.value))
+                    // }
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      if (inputValue === "") {
+                        setDumpsterData("quantity", 0);
+                        return;
+                      }
+
+                      const numValue = Number(inputValue);
+                      if (numValue >= 0) {
+                        setDumpsterData("quantity", numValue);
+                      }
+                    }}
                   />
                 </Form.Group>
               </Col>

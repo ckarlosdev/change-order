@@ -47,7 +47,7 @@ function Task({ tempId }: Props) {
           <Card.Header className="d-flex justify-content-between align-items-center bg-transparent border-bottom-0">
             <Card.Title className="mb-0">{task?.taskName}</Card.Title>
 
-            <div className="d-flex gap-1 no-print">
+            <div className="d-flex gap-2 no-print">
               <Button
                 variant="outline-secondary"
                 size="sm"
@@ -66,7 +66,15 @@ function Task({ tempId }: Props) {
                 className="border-0 rounded-circle"
                 style={{ padding: "8px" }}
                 title="Delete Task"
-                onClick={() => removeTask(tempId)}
+                onClick={() => {
+                  // Levantamos el cuadro de diálogo nativo
+                  const seguro = window.confirm(
+                    "Are you sure you want to delete this task?",
+                  );
+                  if (seguro) {
+                    removeTask(tempId);
+                  }
+                }}
                 disabled={isLocked}
               >
                 <FiTrash2 size={18} className="text-danger" />

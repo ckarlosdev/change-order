@@ -21,7 +21,7 @@ function Title({}: Props) {
   const { reset: resetTasks } = useTaskStore();
   const { reset: resetSignatures } = useSignatureStore();
 
-  if (isLoading) return <p>Loading report data...</p>;
+  if (isLoading) return <p>Loading user data...</p>;
 
   const handleReset = () => {
     resetOrder();

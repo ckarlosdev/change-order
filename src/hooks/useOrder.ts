@@ -43,6 +43,22 @@ export function useFinalize() {
   });
 }
 
+const approveOrder = async ({ orderId }: { orderId: number }) => {
+  return api.put(`v2/job-management/change-order/${orderId}/approve`);
+};
+
+export function useApprove() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: approveOrder,
+    mutationKey: ["approveOrder"],
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["changeOrder"] });
+    },
+  });
+}
+
 const queryGetOrderById = async (orderId: number): Promise<ChangeOrder> => {
   const { data } = await api.get(`v2/job-management/change-order/${orderId}`);
   return data;

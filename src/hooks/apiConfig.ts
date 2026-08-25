@@ -1,7 +1,7 @@
-export const API_BASE_URL = "http://localhost:8080/api/";
+// export const API_BASE_URL = "http://localhost:8083/api/";
 
 // Production environment
-// export const API_BASE_URL = "https://api-gateway-px44.onrender.com/api/";
+export const API_BASE_URL = "https://api-gateway-px44.onrender.com/api/";
 
 import axios from "axios";
 import { useAuthStore } from "../stores/authStore";
@@ -49,7 +49,11 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Si no hay respuesta o no es un 401, o ya se intentó reintentar esta request, fallamos de inmediato
-    if (!error.response || error.response.status !== 401 || originalRequest._retry) {
+    if (
+      !error.response ||
+      error.response.status !== 401 ||
+      originalRequest._retry
+    ) {
       return Promise.reject(error);
     }
 
@@ -60,14 +64,14 @@ api.interceptors.response.use(
       })
         .then((token) => {
           // CORRECCIÓN 1: Marcar como _retry también a las peticiones en cola para evitar bucles
-          originalRequest._retry = true; 
-          
+          originalRequest._retry = true;
+
           // CORRECCIÓN 2: Asegurar la asignación limpia de headers
           originalRequest.headers = {
             ...originalRequest.headers,
             Authorization: `Bearer ${token}`,
           };
-          
+
           return api(originalRequest);
         })
         .catch((err) => Promise.reject(err));

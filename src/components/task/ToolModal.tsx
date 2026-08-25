@@ -18,9 +18,15 @@ const TOOL_SUGGESTIONS = [
   "Shovel",
   "Broom",
   "Squeegee",
+  "Chipping hammer",
+  "Circular saw",
+  "Container",
   "Demo Cart",
   "Fan",
+  "Floor scraper",
+  "Generator",
   "Negative",
+  "Sawzall",
 ];
 
 function ToolModal({}: Props) {
@@ -92,10 +98,25 @@ function ToolModal({}: Props) {
                     style={{ textAlign: "center", fontWeight: "bold" }}
                     type="number"
                     min="1"
-                    value={toolData.quantity}
-                    onChange={(e) =>
-                      setToolData("quantity", Number(e.target.value))
+                    // value={toolData.quantity}
+                    value={
+                      toolData.quantity === 0 ? "" : (toolData.quantity ?? "")
                     }
+                    // onChange={(e) =>
+                    //   setToolData("quantity", Number(e.target.value))
+                    // }
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      if (inputValue === "") {
+                        setToolData("quantity", 0);
+                        return;
+                      }
+
+                      const numValue = Number(inputValue);
+                      if (numValue >= 0) {
+                        setToolData("quantity", numValue);
+                      }
+                    }}
                     // onKeyDown={(e) => e.key === "Enter" && handleAdd()} // UX: Agregar con Enter
                   />
                 </Form.Group>

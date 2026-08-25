@@ -47,7 +47,7 @@ function CrewCard({ task }: Props) {
                 gap: "8px",
                 fontWeight: "bold",
               }}
-              title="Editar"
+              title="Update"
               onClick={() => handleUpdateCrew()}
               disabled={isLocked}
             >

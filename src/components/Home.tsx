@@ -1,4 +1,4 @@
-import { Container, Row } from "react-bootstrap";
+import { Container, Row, Spinner } from "react-bootstrap";
 import Title from "./Title";
 import Job from "./Job";
 import General from "./General";
@@ -8,7 +8,6 @@ import CrewModal from "./task/CrewModal";
 import EquipmentModal from "./task/EquipmentModal";
 import ToolModal from "./task/ToolModal";
 import DumpsterModal from "./task/DumpsterModal";
-import SignatureArea from "./SignatureArea";
 import ActionButtons from "./ActionButtons";
 import { useContextStore } from "../stores/useContextStore";
 import { useSearchParams } from "react-router-dom";
@@ -16,10 +15,12 @@ import { useEffect, useRef } from "react";
 import { useGetChangeOrder } from "../hooks/useOrder";
 import useOrderStore from "../stores/useOrderStore";
 import useTaskStore from "../stores/useTaskStore";
-import PreViewer from "./PreViewer";
 import { useSignatureStore } from "../stores/useSignatureStore";
 import { useReactToPrint } from "react-to-print";
 import "../styles/buttons.css";
+import { useMutationState } from "@tanstack/react-query";
+import Popup from "./Popup";
+import SignatureSection from "./SignatureSection";
 
 type Props = {};
 
@@ -52,14 +53,14 @@ function Home({}: Props) {
         ? null
         : parseInt(changeOrderIdParam, 10);
 
-    // console.log("Params detectados:", { jobId, changeOrderId, action });
+    console.log("Params detectados:", { jobId, changeOrderId, action });
 
     const hasJobChanged = jobId !== null && jobId !== jobIdStored;
     const isNewReportWithoutOrder = hasJobChanged && !changeOrderId;
 
     if (isNewAction || isNewReportWithoutOrder) {
       handleReset();
-      console.log("It's new");
+      // console.log("It's new");
     }
 
     setIds(jobId, changeOrderId);
@@ -89,6 +90,12 @@ function Home({}: Props) {
     documentTitle: `Change Order ${orderData.orderDate}`,
   });
 
+  const isSavingReport =
+    useMutationState({
+      filters: { mutationKey: ["saveOrder"], status: "pending" },
+      select: (mutation) => mutation.state.status === "pending",
+    }).length > 0;
+
   if (!isLoaded) return <div>Loading...</div>;
 
   return (
@@ -107,30 +114,52 @@ function Home({}: Props) {
           <TaskArea />
         </Row>
         <Row>
-          {orderData?.orderStatus === "FINALIZED" ||
-          orderData?.orderStatus === "VOIDED" ? (
-            // MODO LECTURA: Si la orden ya está cerrada o anulada, mostramos las imágenes estáticas del VPS
-            // <div className="d-flex justify-content-around w-100 mt-3">
-            //   <SignatureViewer signature={subcontractorSig} />
-            //   <SignatureViewer signature={contractorSig} />
-            //   {/* <h2>Entra</h2> */}
-            // </div>
+          {/* {orderData?.orderStatus === "FINALIZED" ||
+          orderData?.orderStatus === "APPROVED" ? (
             <PreViewer />
           ) : (
             // MODO EDICIÓN: Si está en DRAFT (o es una orden nueva), mostramos tu Canvas tal cual lo tienes hoy
             <SignatureArea />
-          )}
+          )} */}
+
+          <SignatureSection />
         </Row>
         <Row>
           <ActionButtons onPrint={handlePrint} />
         </Row>
       </Container>
 
+      {isSavingReport && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(255, 255, 255, 0.7)",
+            zIndex: 9999,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Spinner
+            animation="border"
+            variant="primary"
+            style={{ width: "4rem", height: "4rem" }}
+          />
+          <h4 className="mt-3">Saving Change Order...</h4>
+        </div>
+      )}
+
       <TaskModal />
       <CrewModal />
       <EquipmentModal />
       <ToolModal />
       <DumpsterModal />
+      <Popup />
     </>
   );
 }

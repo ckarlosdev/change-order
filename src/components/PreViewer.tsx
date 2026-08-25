@@ -21,49 +21,21 @@ function PreViewer({}: Props) {
           <Card.Body className="p-4">
             <Row className="text-center">
               {/* Columna de la Firma del Subcontratista */}
-              <Col md={6} className="mb-3 mb-md-0">
-                <div
-                  className="signature-container"
-                  style={{
-                    border: "1px solid #dee2e6",
-                    borderRadius: "8px",
-                    backgroundColor: "#f8f9fa",
-                    height: "200px", // 👈 Controla la altura del recuadro
-                    padding: "15px", // Espacio interno para que respire la firma
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                  }}
-                >
-                  <SignatureViewer signature={subcontractorSig} />
-                </div>
-                <div className="mt-2 text-muted fw-bold small">
-                  Subcontractor
-                </div>
+              <Col md={6} className="mb-4 mb-md-0 px-4">
+                <SignatureViewer
+                  signature={subcontractorSig}
+                  legalText="We are agree to furnish labor & materials complete in accordance with the above specification at the price stated above."
+                  label="Scope Approval"
+                />
               </Col>
 
               {/* Columna de la Firma del Contratista General */}
-              <Col md={6}>
-                <div
-                  className="signature-container"
-                  style={{
-                    border: "1px solid #dee2e6",
-                    borderRadius: "8px",
-                    backgroundColor: "#f8f9fa",
-                    height: "200px", // 👈 Misma altura proporcional
-                    padding: "15px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                  }}
-                >
-                  <SignatureViewer signature={contractorSig} />
-                </div>
-                <div className="mt-2 text-muted fw-bold small">
-                  General Contractor
-                </div>
+              <Col md={6} className="px-4">
+                <SignatureViewer
+                  signature={contractorSig}
+                  legalText="Above additional work to be performed under the same conditions as specified in the original contract unless otherwise stipulated in writing."
+                  label="Finalized"
+                />
               </Col>
             </Row>
           </Card.Body>

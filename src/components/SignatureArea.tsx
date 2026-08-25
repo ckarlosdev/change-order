@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { Button, Card, Col, Row } from "react-bootstrap";
+import { Button, Card, Col, Form, Row } from "react-bootstrap";
 import SignatureCanvas from "react-signature-canvas";
 import { useSignatureStore } from "../stores/useSignatureStore";
 
@@ -12,6 +12,10 @@ function SignatureArea({}: Props) {
   const {
     subcontractorData,
     contractorData,
+    contractorName,
+    subcontractorName,
+    setContractorName,
+    setSubcontractorName,
     setSubcontractorData,
     setContractorData,
   } = useSignatureStore();
@@ -127,7 +131,9 @@ function SignatureArea({}: Props) {
 
                   <SignatureCanvas
                     ref={subcontractorSignRef as React.MutableRefObject<any>}
-                    onEnd={() => handleEnd(subcontractorSignRef, setSubcontractorData)}
+                    onEnd={() =>
+                      handleEnd(subcontractorSignRef, setSubcontractorData)
+                    }
                     penColor="black"
                     canvasProps={{
                       className: "sigCanvas",
@@ -140,11 +146,29 @@ function SignatureArea({}: Props) {
                   />
                 </div>
 
+                <Form.Group className="mt-2 text-start">
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    placeholder={"Contractor Name / Printed Name"}
+                    value={subcontractorName}
+                    onChange={(e) => setSubcontractorName(e.target.value)}
+                    style={{
+                      textAlign: "center",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      borderBottom: "1px dashed #ced4da",
+                      borderRadius: "0",
+                      boxShadow: "none",
+                    }}
+                  />
+                </Form.Group>
+
                 <div
                   className="d-flex justify-content-center align-items-center"
                   style={{ borderTop: "1px solid #000", marginTop: "10px" }}
                 >
-                  <strong>Subcontractor</strong>
+                  <strong>Scope Approval</strong>
                   {/* <strong>{new Date().toLocaleDateString()}</strong> */}
                 </div>
               </Col>
@@ -177,7 +201,7 @@ function SignatureArea({}: Props) {
                   >
                     Above additional work to be performed under the same
                     conditions as specified in the original contract unless
-                    otherwise stioulated in writing.
+                    otherwise stipulated in writing.
                   </div>
 
                   {/* Botón X posicionado arriba a la derecha */}
@@ -222,11 +246,29 @@ function SignatureArea({}: Props) {
                   />
                 </div>
 
+                <Form.Group className="mt-2 text-start">
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    placeholder={"Contractor Name / Printed Name"}
+                    value={contractorName}
+                    onChange={(e) => setContractorName(e.target.value)}
+                    style={{
+                      textAlign: "center",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      borderBottom: "1px dashed #ced4da",
+                      borderRadius: "0",
+                      boxShadow: "none",
+                    }}
+                  />
+                </Form.Group>
+
                 <div
                   className="d-flex justify-content-center align-items-center"
                   style={{ borderTop: "1px solid #000", marginTop: "10px" }}
                 >
-                  <strong>General Contractor</strong>
+                  <strong>Finalized TMP</strong>
                 </div>
               </Col>
             </Row>

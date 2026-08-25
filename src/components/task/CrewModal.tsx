@@ -38,13 +38,26 @@ function CrewModal({}: Props) {
                     fontWeight: "bold",
                     textAlign: "center",
                   }}
-                  value={task?.foreman || 0}
-                  onChange={(e) =>
-                    updateTask(task?.temporalId!, {
-                      foreman: Number(e.target.value),
-                    })
-                  }
+                  value={task?.foreman === 0 ? "" : (task?.foreman ?? "")}
+                  // onChange={(e) =>
+                  //   updateTask(task?.temporalId!, {
+                  //     foreman: Number(e.target.value),
+                  //   })
+                  // }
+                  onChange={(e) => {
+                    const inputValue = e.target.value;
+                    if (inputValue === "") {
+                      updateTask(task?.temporalId!, { foreman: 0 });
+                      return;
+                    }
+
+                    const numValue = Number(inputValue);
+                    if (numValue >= 0) {
+                      updateTask(task?.temporalId!, { foreman: numValue });
+                    }
+                  }}
                   type="number"
+                  min="0"
                   placeholder="#"
                 />
               </FloatingLabel>
@@ -60,13 +73,26 @@ function CrewModal({}: Props) {
                     fontWeight: "bold",
                     textAlign: "center",
                   }}
-                  value={task?.labor || 0}
-                  onChange={(e) =>
-                    updateTask(task?.temporalId!, {
-                      labor: Number(e.target.value),
-                    })
-                  }
+                  value={task?.labor === 0 ? "" : (task?.labor ?? "")}
+                  // onChange={(e) =>
+                  //   updateTask(task?.temporalId!, {
+                  //     labor: Number(e.target.value),
+                  //   })
+                  // }
+                  onChange={(e) => {
+                    const inputValue = e.target.value;
+                    if (inputValue === "") {
+                      updateTask(task?.temporalId!, { labor: 0 });
+                      return;
+                    }
+
+                    const numValue = Number(inputValue);
+                    if (numValue >= 0) {
+                      updateTask(task?.temporalId!, { labor: numValue });
+                    }
+                  }}
                   type="number"
+                  min="0"
                   placeholder="#"
                 />
               </FloatingLabel>
@@ -84,13 +110,21 @@ function CrewModal({}: Props) {
                     fontWeight: "bold",
                     textAlign: "center",
                   }}
-                  value={task?.other || 0}
-                  onChange={(e) =>
-                    updateTask(task?.temporalId!, {
-                      other: Number(e.target.value),
-                    })
-                  }
+                  value={task?.other === 0 ? "" : (task?.other ?? "")}
+                  onChange={(e) => {
+                    const inputValue = e.target.value;
+                    if (inputValue === "") {
+                      updateTask(task?.temporalId!, { other: 0 });
+                      return;
+                    }
+
+                    const numValue = Number(inputValue);
+                    if (numValue >= 0) {
+                      updateTask(task?.temporalId!, { other: numValue });
+                    }
+                  }}
                   type="number"
+                  min="0"
                   placeholder="#"
                 />
               </FloatingLabel>
@@ -106,13 +140,26 @@ function CrewModal({}: Props) {
                     fontWeight: "bold",
                     textAlign: "center",
                   }}
-                  value={task?.totalHours || 0}
-                  onChange={(e) =>
-                    updateTask(task?.temporalId!, {
-                      totalHours: Number(e.target.value),
-                    })
-                  }
+                  value={task?.totalHours === 0 ? "" : (task?.totalHours ?? "")}
+                  // onChange={(e) =>
+                  //   updateTask(task?.temporalId!, {
+                  //     totalHours: Number(e.target.value),
+                  //   })
+                  // }
+                  onChange={(e) => {
+                    const inputValue = e.target.value;
+                    if (inputValue === "") {
+                      updateTask(task?.temporalId!, { totalHours: 0 });
+                      return;
+                    }
+
+                    const numValue = Number(inputValue);
+                    if (numValue >= 0) {
+                      updateTask(task?.temporalId!, { totalHours: numValue });
+                    }
+                  }}
                   type="number"
+                  min="0"
                   placeholder="#"
                 />
               </FloatingLabel>
