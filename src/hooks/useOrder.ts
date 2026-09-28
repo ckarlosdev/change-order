@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ChangeOrder } from "../types";
+import type { ChangeOrder, ChangeOrderRequestPayload } from "../types";
 import { api } from "./apiConfig";
 
-const createOrder = async ({ reportData }: { reportData: ChangeOrder }) => {
-  if (reportData.id) {
+const createOrder = async ({ reportData }: { reportData: ChangeOrderRequestPayload }) => {
+  if (reportData.order.id) {
     return api.put(
-      `v2/job-management/change-order/${reportData.id}`,
+      `v2/job-management/change-order/${reportData.order.id}`,
       reportData,
     );
   }
@@ -27,8 +27,18 @@ export function useSaveOrder() {
   });
 }
 
-const finalizeOrder = async ({ orderId }: { orderId: number }) => {
-  return api.put(`v2/job-management/change-order/${orderId}/finalize`);
+interface JobDataDto {
+  // Define las propiedades de JobDataDto según tu backend
+  [key: string]: any;
+}
+
+interface FinalizeOrderPayload {
+  orderId: number;
+  jobData: JobDataDto;
+}
+
+const finalizeOrder = async ({ orderId, jobData }: FinalizeOrderPayload) => {
+  return api.put(`v2/job-management/change-order/${orderId}/finalize`, jobData);
 };
 
 export function useFinalize() {

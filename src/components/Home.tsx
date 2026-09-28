@@ -114,14 +114,6 @@ function Home({}: Props) {
           <TaskArea />
         </Row>
         <Row>
-          {/* {orderData?.orderStatus === "FINALIZED" ||
-          orderData?.orderStatus === "APPROVED" ? (
-            <PreViewer />
-          ) : (
-            // MODO EDICIÓN: Si está en DRAFT (o es una orden nueva), mostramos tu Canvas tal cual lo tienes hoy
-            <SignatureArea />
-          )} */}
-
           <SignatureSection />
         </Row>
         <Row>

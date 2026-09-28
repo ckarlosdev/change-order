@@ -23,7 +23,7 @@ function Popup({}: Props) {
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={() => setShowPopupModal(false)}>
-          Cerrar
+          Close
         </Button>
       </Modal.Footer>
     </Modal>

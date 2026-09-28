@@ -1,4 +1,4 @@
-import { Badge, Button, Card, Col, Row, Spinner } from "react-bootstrap";
+import { Badge, Button, Card, Col, Row } from "react-bootstrap";
 import useOrderStore from "../stores/useOrderStore";
 import { useContextStore } from "../stores/useContextStore";
 import useTaskStore from "../stores/useTaskStore";
@@ -6,18 +6,22 @@ import { useSignatureStore } from "../stores/useSignatureStore";
 import { useApprove, useFinalize, useSaveOrder } from "../hooks/useOrder";
 import { useAuthStore } from "../stores/authStore";
 import useModalsStore from "../stores/useModalsStore";
+import useJob from "../hooks/useJob";
 
 type Props = {
   onPrint: () => void;
 };
 
 function ActionButtons({ onPrint }: Props) {
-  const { orderData, setChangeOrderData, setFullData } = useOrderStore();
+  const { orderData, setFullData } = useOrderStore();
   const jobId = useContextStore((s) => s.jobId);
   const { assignedTasks, setFullData: setTaskData } = useTaskStore();
-  const { mutate, isPending: isSavingReport } = useSaveOrder();
+  const { data: jobData } = useJob(jobId!);
+
+  const { mutate: mutateSave, isPending: isSavingReport } = useSaveOrder();
   const { mutate: mutateFinalize, isPending: isFinalizing } = useFinalize();
   const { mutate: mutateApprove, isPending: isApproving } = useApprove();
+
   const { user: userAuth } = useAuthStore();
   const { setModalConfig, setShowPopupModal } = useModalsStore();
 
@@ -28,6 +32,7 @@ function ActionButtons({ onPrint }: Props) {
     contractorName,
   } = useSignatureStore();
 
+  // Roles de usuario
   const isAuthorized = userAuth?.roles?.some(
     (role) =>
       role.name === "ROLE_SUPERVISOR" ||
@@ -35,35 +40,160 @@ function ActionButtons({ onPrint }: Props) {
       role.name === "ROLE_ADMIN",
   );
 
-  const isLocked = orderData.orderStatus === "FINALIZED";
-  const isDisabled = isLocked || isFinalizing || !isAuthorized || isApproving;
-
+  // Derivados de Estado de la Orden
   const isDraft = orderData.orderStatus === "DRAFT";
   const isApproved = orderData.orderStatus === "APPROVED";
+  const isFinalized = orderData.orderStatus === "FINALIZED";
+
+  // Deshabilitar botones durante procesos asíncronos o falta de permisos
+  const isBusy = isSavingReport || isApproving || isFinalizing;
+  const isActionDisabled = !isAuthorized || isBusy;
 
   const buildCurrentPayload = () => {
-    const signaturesPayload: any[] = [];
+    const existingSignatures = orderData.signatures || [];
+    let signaturesPayload = [...existingSignatures];
+
+    // SOLO si el usuario firmó algo nuevo en el canvas
     if (subcontractorData) {
+      signaturesPayload = signaturesPayload.filter(
+        (s: any) =>
+          s.signatureRole !== "SUBCONTRACTOR" && s.signatureRole !== "APPROVED",
+      );
       signaturesPayload.push({
         signatureRole: "SUBCONTRACTOR",
         signatureData: subcontractorData,
         signatureName: subcontractorName,
-      });
+      } as any);
     }
+
     if (contractorData) {
+      signaturesPayload = signaturesPayload.filter(
+        (s: any) => s.signatureRole !== "CONTRACTOR",
+      );
       signaturesPayload.push({
         signatureRole: "CONTRACTOR",
         signatureData: contractorData,
         signatureName: contractorName,
-      });
+      } as any);
     }
 
-    return {
+    const orderPayload = {
       ...orderData,
-      jobId: jobId,
+      jobId,
       tasks: assignedTasks,
       signatures: signaturesPayload,
     };
+
+    const jobPayload = {
+      number: jobData?.number ?? "",
+      name: jobData?.name ?? "",
+    };
+
+    return {
+      order: orderPayload,
+      job: jobPayload,
+    };
+  };
+
+  const validateData = (targetStatus?: "APPROVED" | "FINALIZED") => {
+    if (!orderData.employeeId) {
+      showModal("Action Required", "Foreman field missing.", "warning");
+      return false;
+    }
+    if (!orderData.orderDate) {
+      showModal("Action Required", "Order date missing.", "warning");
+      return false;
+    }
+    if (assignedTasks.length < 1) {
+      showModal("Action Required", "Order tasks missing.", "warning");
+      return false;
+    }
+
+    if (targetStatus === "APPROVED") {
+      console.log("APPROVED");
+
+      const savedSubSig = orderData.signatures?.find(
+        (s: any) =>
+          s.signatureRole === "APPROVED" || s.signatureRole === "SUBCONTRACTOR",
+      ) as any;
+
+      // Evalúa múltiples nombres comunes de propiedades para la imagen/datos
+      const savedData =
+        savedSubSig?.signatureData ||
+        savedSubSig?.signatureUrl ||
+        savedSubSig?.imageUrl ||
+        savedSubSig?.data ||
+        savedSubSig?.url;
+
+      // Evalúa múltiples nombres comunes para el nombre impreso
+      const savedName =
+        savedSubSig?.signatureName ||
+        savedSubSig?.printedName ||
+        savedSubSig?.name ||
+        savedSubSig?.signerName;
+
+      // Si existe el objeto guardado previamente, lo toma como válido automáticamente
+      const hasData = Boolean(subcontractorData || savedData || savedSubSig);
+      const hasName = Boolean(
+        subcontractorName?.trim() || savedName?.trim() || savedSubSig,
+      );
+
+      if (!hasData || !hasName) {
+        showModal(
+          "Subcontractor Signature Required",
+          "The scope approval signature and printed name are required to approve the order.",
+          "warning",
+        );
+        return false;
+      }
+    }
+
+    if (targetStatus === "FINALIZED") {
+      console.log("FINALIZED");
+      const savedContractorSig = orderData.signatures?.find(
+        (s: any) => s.signatureRole === "CONTRACTOR",
+      ) as any;
+
+      const savedData =
+        savedContractorSig?.signatureData ||
+        savedContractorSig?.signatureUrl ||
+        savedContractorSig?.imageUrl ||
+        savedContractorSig?.data ||
+        savedContractorSig?.url;
+
+      const savedName =
+        savedContractorSig?.signatureName ||
+        savedContractorSig?.printedName ||
+        savedContractorSig?.name ||
+        savedContractorSig?.signerName;
+
+      const hasData = Boolean(
+        contractorData || savedData || savedContractorSig,
+      );
+      const hasName = Boolean(
+        contractorName?.trim() || savedName?.trim() || savedContractorSig,
+      );
+
+      if (!hasData || !hasName) {
+        showModal(
+          "Contractor Signature Required",
+          "The contractor signature and printed name are required to finalize the order.",
+          "warning",
+        );
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const showModal = (
+    title: string,
+    body: string,
+    variant: "success" | "warning" | "danger",
+  ) => {
+    setModalConfig({ title, body, variant });
+    setShowPopupModal(true);
   };
 
   const handleSaveDraft = (
@@ -73,191 +203,99 @@ function ActionButtons({ onPrint }: Props) {
     if (!validateData()) return;
 
     const payload = buildCurrentPayload();
-    // console.log(payload);
 
-    mutate(
+    mutateSave(
       { reportData: payload },
       {
         onSuccess: (response) => {
           const savedOrder = response.data;
+          // IMPORTANTE: Actualizamos el Store global completo
           setFullData(savedOrder);
-          setTaskData(savedOrder.tasks);
-          console.log("Change order saved successfully. ");
+          if (savedOrder.tasks) setTaskData(savedOrder.tasks);
+
           if (showNotification) {
-            setModalConfig({
-              title: "Success!",
-              body: "Your draft has been saved successfully.",
-              variant: "success",
-            });
-            setShowPopupModal(true); // Asegúrate de encender el estado para abrir el modal
+            showModal(
+              "Success!",
+              "Your draft has been saved successfully.",
+              "success",
+            );
           }
           if (callbackOnSuccess) {
             callbackOnSuccess(savedOrder);
           }
         },
         onError: (error) => {
-          console.log("Error saving order", error);
-          setModalConfig({
-            title: "Save Failed",
-            body: "An error occurred while saving the draft. Please try again.",
-            variant: "danger",
-          });
-          setShowPopupModal(true);
+          console.error("Error saving order", error);
+          showModal(
+            "Save Failed",
+            "An error occurred while saving. Please try again.",
+            "danger",
+          );
         },
       },
     );
   };
 
-  const validateData = (targetStatus?: "APPROVED" | "FINALIZED") => {
-    if (orderData.employeeId === null) {
-      setModalConfig({
-        title: "Action Required",
-        body: "Foreman field missing.",
-        variant: "warning",
-      });
-      setShowPopupModal(true);
-      return false;
-    }
-
-    if (orderData.orderDate === null) {
-      setModalConfig({
-        title: "Action Required",
-        body: "Order date missing.",
-        variant: "warning",
-      });
-      setShowPopupModal(true);
-      return false;
-    }
-
-    if (assignedTasks.length < 1) {
-      // alert("Order tasks missing");
-      setModalConfig({
-        title: "Action Required",
-        body: "Order tasks missing.",
-        variant: "warning",
-      });
-      setShowPopupModal(true);
-      return false;
-    }
-
-    if (targetStatus === "APPROVED") {
-      if (!subcontractorData || !subcontractorName?.trim()) {
-        setModalConfig({
-          title: "Subcontractor Signature Required",
-          body: "The scope approval signature and printed name are required to approve the order.",
-          variant: "warning",
-        });
-        setShowPopupModal(true);
-        return false;
-      }
-    }
-
-    if (targetStatus === "FINALIZED") {
-      if (!contractorData || !contractorName?.trim()) {
-        setModalConfig({
-          title: "Contractor Signature Required",
-          body: "The finalized's signature and printed name are required to finalize the order.",
-          variant: "warning",
-        });
-        setShowPopupModal(true);
-        return false;
-      }
-    }
-
-    return true;
-  };
-
   const handleApprove = () => {
-    if (!orderData.id) {
-      setModalConfig({
-        title: "Action Required",
-        body: "Please save the draft before approving.",
-        variant: "warning",
-      });
-      setShowPopupModal(true);
-      return;
-    }
-
-    // 1. Validamos que el subcontractor haya firmado y puesto su nombre
     if (!validateData("APPROVED")) return;
 
-    // 2. Guardamos la firma primero en la base de datos como DRAFT
+    // Guardamos firmas/datos actuales antes de aprobar
     handleSaveDraft((savedOrder) => {
-      // 3. Si se guardó con éxito, llamamos al endpoint exclusivo de aprobación
       mutateApprove(
         { orderId: savedOrder.id },
         {
           onSuccess: (response) => {
-            const status = response.data.orderStatus; // Recibe "APPROVED" del backend
-            setChangeOrderData("orderStatus", status);
-
-            setModalConfig({
-              title: "Order Approved!",
-              body: "The change order has been successfully approved by the subcontractor.",
-              variant: "success",
-            });
-            setShowPopupModal(true);
+            // Reemplazamos todo el objeto con el resultado devuelto por el backend
+            setFullData(response.data);
+            showModal(
+              "Order Approved!",
+              "The change order has been successfully approved.",
+              "success",
+            );
           },
           onError: (error) => {
             console.error("Error approving order", error);
-            setModalConfig({
-              title: "Approval Failed",
-              body: "Could not approve the order. Please try again.",
-              variant: "danger",
-            });
-            setShowPopupModal(true);
+            showModal(
+              "Approval Failed",
+              "Could not approve the order. Try again.",
+              "danger",
+            );
           },
         },
       );
-    }, false); // El "false" evita que salte la notificación de "Borrador guardado" intermedia
+    }, false);
   };
 
   const handleFinalize = () => {
-    if (!orderData.id) {
-      setModalConfig({
-        title: "Action Required",
-        body: "Please save the draft before finalizing the order.",
-        variant: "warning",
-      });
-      setShowPopupModal(true);
-      return;
-    }
-
     if (!validateData("FINALIZED")) return;
 
-    // if (!subcontractorData && !contractorData) {
-    //   setModalConfig({
-    //     title: "Signature Required",
-    //     body: "At least one signature (Contractor or Subcontractor) is required to finalize the order.",
-    //     variant: "warning",
-    //   });
-    //   setShowPopupModal(true);
-    //   return;
-    // }
-
+    // Guardamos la firma final del contratista antes de cambiar el estado a FINALIZED
     handleSaveDraft((savedOrder) => {
       mutateFinalize(
-        { orderId: savedOrder.id },
+        {
+          orderId: savedOrder.id,
+          jobData: {
+            number: jobData?.number ?? "not found",
+            name: jobData?.name ?? "not found",
+          },
+        },
         {
           onSuccess: (response) => {
-            const status = response.data.orderStatus;
-            setChangeOrderData("orderStatus", status);
-            console.log("Order finalized successfully!");
-            setModalConfig({
-              title: "Order Finalized!",
-              body: "The change order has been successfully finalized and closed.",
-              variant: "success",
-            });
-            setShowPopupModal(true);
+            // AL ACTUALIZAR EL STORE COMPLETO, 'orderStatus' PASA A 'FINALIZED'
+            setFullData(response.data);
+            showModal(
+              "Order Finalized!",
+              "The change order has been successfully finalized and closed.",
+              "success",
+            );
           },
           onError: (error) => {
             console.error("Error finalizing order", error);
-            setModalConfig({
-              title: "Finalization Failed",
-              body: "Could not finalize the order. Please check the information and try again.",
-              variant: "danger",
-            });
-            setShowPopupModal(true);
+            showModal(
+              "Finalization Failed",
+              "Could not finalize the order.",
+              "danger",
+            );
           },
         },
       );
@@ -265,96 +303,82 @@ function ActionButtons({ onPrint }: Props) {
   };
 
   return (
-    <>
-      <Col>
-        <Card className="mb-2 shadow-sm border-0 no-print">
-          <Card.Body>
-            <Row className="align-items-center">
-              {/* Lado izquierdo: Estado del documento (Opcional pero recomendado) */}
-              <Col md={4} className="text-start d-none d-md-block">
-                <Badge
-                  bg={isDisabled ? "success" : "warning"}
-                  className="px-3 py-2"
-                >
-                  STATUS: {orderData.orderStatus}
-                </Badge>
-              </Col>
+    <Col>
+      <Card className="mb-2 shadow-sm border-0 no-print">
+        <Card.Body>
+          <Row className="align-items-center">
+            {/* Estado actual del documento */}
+            <Col md={4} className="text-start d-none d-md-block">
+              <Badge
+                bg={isFinalized ? "success" : isApproved ? "info" : "warning"}
+                className="px-3 py-2 text-uppercase"
+              >
+                STATUS: {orderData.orderStatus || "DRAFT"}
+              </Badge>
+            </Col>
 
-              <Col md={8} className="text-end">
-                <div className="d-flex justify-content-end gap-2">
-                  {/* Flujo 1: Si es DRAFT -> Puede guardar borrador y Aprobar (Subcontractor) */}
-                  {isDraft && (
-                    <>
-                      <Button
-                        variant="outline-primary"
-                        style={{ width: "150px", fontWeight: "bold" }}
-                        onClick={() => handleSaveDraft()}
-                        disabled={isSavingReport}
-                      >
-                        {isSavingReport ? "Saving..." : "Save Draft"}
-                      </Button>
-                      <Button
-                        variant="info"
-                        className="px-4 py-2 fw-bold shadow-sm text-white"
-                        onClick={handleApprove}
-                      >
-                        Approve (Subcontractor)
-                      </Button>
-                    </>
-                  )}
-
-                  {/* Flujo 2: Si es APPROVED -> Puede guardar cambios menores y Finalizar (Contractor) */}
-                  {isApproved && (
-                    <>
-                      <Button
-                        variant="outline-primary"
-                        style={{ width: "150px", fontWeight: "bold" }}
-                        onClick={() => handleSaveDraft()}
-                        disabled={isSavingReport}
-                      >
-                        {isSavingReport ? (
-                          <>
-                            <Spinner
-                              as="span"
-                              animation="border"
-                              size="sm"
-                              role="status"
-                              aria-hidden="true"
-                              style={{ marginRight: "10px" }}
-                            />
-                            Saving...
-                          </>
-                        ) : (
-                          "Save Changes"
-                        )}
-                      </Button>
-                      <Button
-                        variant="success"
-                        className="px-4 py-2 fw-bold shadow-sm"
-                        onClick={handleFinalize}
-                      >
-                        Finalize (Contractor)
-                      </Button>
-                    </>
-                  )}
-
-                  {/* Flujo 3: Si es FINALIZED -> Solo permite descargar el PDF */}
-                  {isLocked && (
+            <Col md={8} className="text-end">
+              <div className="d-flex justify-content-end gap-2 align-items-center">
+                {/* ETAPA 1: DRAFT */}
+                {isDraft && (
+                  <>
                     <Button
-                      variant="primary"
-                      className="px-4 py-2 fw-bold d-flex align-items-center no-print"
-                      onClick={() => onPrint()}
+                      variant="outline-primary"
+                      style={{ width: "140px", fontWeight: "bold" }}
+                      onClick={() => handleSaveDraft()}
+                      disabled={isActionDisabled}
                     >
-                      Download PDF
+                      {isSavingReport ? "Saving..." : "Save Draft"}
                     </Button>
-                  )}
-                </div>
-              </Col>
-            </Row>
-          </Card.Body>
-        </Card>
-      </Col>
-    </>
+                    <Button
+                      variant="info"
+                      className="px-4 py-2 fw-bold shadow-sm text-white"
+                      onClick={handleApprove}
+                      disabled={isActionDisabled}
+                    >
+                      {isApproving ? "Approving..." : "Approve (Subcontractor)"}
+                    </Button>
+                  </>
+                )}
+
+                {/* ETAPA 2: APPROVED */}
+                {isApproved && (
+                  <>
+                    <Button
+                      variant="outline-primary"
+                      style={{ width: "140px", fontWeight: "bold" }}
+                      onClick={() => handleSaveDraft()}
+                      disabled={isActionDisabled}
+                    >
+                      {isSavingReport ? "Saving..." : "Save Changes"}
+                    </Button>
+                    <Button
+                      variant="success"
+                      className="px-4 py-2 fw-bold shadow-sm"
+                      onClick={handleFinalize}
+                      disabled={isActionDisabled}
+                    >
+                      {isFinalizing ? "Finalizing..." : "Finalize (Contractor)"}
+                    </Button>
+                  </>
+                )}
+
+                {/* ETAPA 3: FINALIZED (Único estado donde solo se muestra PDF) */}
+                {isFinalized && (
+                  <Button
+                    variant="primary"
+                    className="px-4 py-2 fw-bold d-flex align-items-center no-print"
+                    onClick={onPrint}
+                  >
+                    Download PDF
+                  </Button>
+                )}
+              </div>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+    </Col>
   );
 }
 
