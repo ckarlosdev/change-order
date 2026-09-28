@@ -94,3 +94,13 @@ export type ModalConfiguration = {
   body: string;
   variant: string;
 };
+
+export type JobData = {
+  number: String;
+  name: String;
+}
+
+export interface ChangeOrderRequestPayload {
+  order: ChangeOrder; // O el DTO de creación de la orden
+  job: JobData;
+}
