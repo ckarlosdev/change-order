@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button, Col, FloatingLabel, Form, Modal, Row } from "react-bootstrap";
 import useModalsStore from "../../stores/useModalsStore";
 import useTaskStore from "../../stores/useTaskStore";
@@ -11,11 +12,20 @@ function CrewModal({}: Props) {
 
   const task = assignedTasks.find((t) => t.temporalId === selectedTask);
 
+  // Texto tal como lo escribe el usuario (ej. "0", "2.") mientras edita;
+  // null = mostrar el valor guardado en el store.
+  const [hoursDraft, setHoursDraft] = useState<string | null>(null);
+  const hoursValue =
+    hoursDraft ?? (task?.totalHours ? String(task.totalHours) : "");
+
   return (
     <>
       <Modal
         show={showCrewModal}
-        onHide={() => setShowCrewModal(false)}
+        onHide={() => {
+          setHoursDraft(null);
+          setShowCrewModal(false);
+        }}
         backdrop="static"
         keyboard={false}
       >
@@ -140,25 +150,25 @@ function CrewModal({}: Props) {
                     fontWeight: "bold",
                     textAlign: "center",
                   }}
-                  value={task?.totalHours === 0 ? "" : (task?.totalHours ?? "")}
-                  // onChange={(e) =>
-                  //   updateTask(task?.temporalId!, {
-                  //     totalHours: Number(e.target.value),
-                  //   })
-                  // }
+                  value={hoursValue}
                   onChange={(e) => {
                     const inputValue = e.target.value;
+                    setHoursDraft(inputValue);
+
                     if (inputValue === "") {
                       updateTask(task?.temporalId!, { totalHours: 0 });
                       return;
                     }
 
                     const numValue = Number(inputValue);
-                    if (numValue >= 0) {
+                    if (!Number.isNaN(numValue) && numValue >= 0) {
                       updateTask(task?.temporalId!, { totalHours: numValue });
                     }
                   }}
+                  onBlur={() => setHoursDraft(null)}
                   type="number"
+                  step="any"
+                  inputMode="decimal"
                   min="0"
                   placeholder="#"
                 />
