@@ -1,4 +1,4 @@
-import { Container, Row, Spinner } from "react-bootstrap";
+import { Col, Container, Row, Spinner } from "react-bootstrap";
 import Title from "./Title";
 import Job from "./Job";
 import General from "./General";
@@ -105,7 +105,9 @@ function Home({}: Props) {
           <Title />
         </Row>
         <Row className="justify-content-md-center">
-          <Job />
+          <Col>
+            <Job />
+          </Col>
         </Row>
         <Row className="justify-content-md-center">
           <General />

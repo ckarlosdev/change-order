@@ -2,11 +2,25 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ChangeOrder, ChangeOrderRequestPayload } from "../types";
 import { api } from "./apiConfig";
 
-const createOrder = async ({ reportData }: { reportData: ChangeOrderRequestPayload }) => {
+const createOrder = async ({
+  reportData,
+}: {
+  reportData: ChangeOrderRequestPayload;
+}) => {
   if (reportData.order.id) {
+    const updatePayload = {
+      employeeId: reportData.order.employeeId,
+      orderDate: reportData.order.orderDate,
+      orderNumber: reportData.order.orderNumber,
+      amount: reportData.order.amount,
+      orderStatus: reportData.order.orderStatus,
+      tasks: reportData.order.tasks,
+      signatures: reportData.order.signatures,
+    };
+
     return api.put(
       `v2/job-management/change-order/${reportData.order.id}`,
-      reportData,
+      updatePayload,
     );
   }
   return api.post(`v2/job-management/change-order`, reportData);

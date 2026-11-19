@@ -11,7 +11,7 @@ function useJob(jobId: number) {
   return useQuery({
     queryKey: ["job", jobId],
     queryFn: () => queryJob(jobId!),
-    enabled: !!jobId,
+    enabled: Boolean(jobId) && jobId > 0,
     staleTime: 5 * 60 * 1000, 
     gcTime: 10 * 60 * 1000, 
     retry: false,
