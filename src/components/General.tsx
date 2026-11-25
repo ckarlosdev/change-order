@@ -22,11 +22,10 @@ function General({}: Props) {
   const jobId = useContextStore((s) => s.jobId);
   const changeOrderId = useContextStore((s) => s.changeOrderId);
 
-  // For an existing order, wait until its data is in the store before deciding
-  // whether it needs a proposed number.
-  const isOrderLoaded =
-    !changeOrderId || orderData.id === Number(changeOrderId);
-  const needsNumber = isOrderLoaded && !orderData.orderNumber;
+  // Only a new order gets a proposed number; an existing order keeps the one it
+  // was saved with (the "Suggest" button stays available for it).
+  const isNewOrder = !changeOrderId && !orderData.id;
+  const needsNumber = isNewOrder && !orderData.orderNumber;
 
   // Propose only once per mount, so clearing the field on purpose doesn't refill it.
   const hasProposed = useRef(false);
@@ -39,7 +38,11 @@ function General({}: Props) {
 
   useEffect(() => {
     if (!nextNumber || isFetchingNextNumber || hasProposed.current) return;
-    if (!useOrderStore.getState().orderData.orderNumber) {
+    // Re-check the live state: a late response must not overwrite an existing order.
+    const current = useOrderStore.getState().orderData;
+    const isStillNew =
+      !useContextStore.getState().changeOrderId && !current.id;
+    if (isStillNew && !current.orderNumber) {
       setChangeOrderData("orderNumber", nextNumber.nextOrderNumber);
     }
     hasProposed.current = true;

@@ -21,6 +21,9 @@ export const useContextStore = create<AppContextState>()(
     }),
     {
       name: "app-context-store",
+      // isLoaded must start false on every page load, so children don't render
+      // with the previous session's ids before Home reads the URL.
+      partialize: (s) => ({ jobId: s.jobId, changeOrderId: s.changeOrderId }),
     },
   ),
 );
