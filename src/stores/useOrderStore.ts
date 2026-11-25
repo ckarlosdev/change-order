@@ -21,12 +21,12 @@ const getTodayDate = () => {
   return localISOTime;
 };
 
-const initialData = {
+const initialData: ChangeOrder = {
   id: null,
   jobId: null,
   employeeId: null,
   orderDate: getTodayDate(),
-  orderNumber: 0,
+  orderNumber: null,
   amount: 0,
   orderStatus: "DRAFT",
   tasks: [],

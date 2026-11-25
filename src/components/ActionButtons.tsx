@@ -56,6 +56,10 @@ function ActionButtons({ onPrint }: Props) {
       showModal("Action Required", "Order date missing.", "warning");
       return false;
     }
+    if (!orderData.orderNumber || orderData.orderNumber < 1) {
+      showModal("Action Required", "Order number missing.", "warning");
+      return false;
+    }
     if (assignedTasks.length < 1) {
       showModal("Action Required", "Order tasks missing.", "warning");
       return false;
