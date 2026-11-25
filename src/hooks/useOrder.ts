@@ -1,5 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ChangeOrder, ChangeOrderRequestPayload } from "../types";
+import type {
+  ChangeOrder,
+  ChangeOrderRequestPayload,
+  NextOrderNumberResponse,
+} from "../types";
 import { api } from "./apiConfig";
 
 const createOrder = async ({
@@ -37,6 +41,7 @@ export function useSaveOrder() {
       if (newId) {
         queryClient.invalidateQueries({ queryKey: ["changeOrder", newId] });
       }
+      queryClient.invalidateQueries({ queryKey: ["nextOrderNumber"] });
     },
   });
 }
@@ -93,6 +98,27 @@ export function useGetChangeOrder(orderId: number) {
     queryKey: ["changeOrder", orderId],
     queryFn: () => queryGetOrderById(orderId),
     enabled: !!orderId,
+    retry: false,
+  });
+}
+
+const queryNextOrderNumber = async (
+  jobId: number,
+): Promise<NextOrderNumberResponse> => {
+  const { data } = await api.get<NextOrderNumberResponse>(
+    `v2/job-management/change-order/next-order-number`,
+    { params: { jobId } },
+  );
+  return data;
+};
+
+export function useNextOrderNumber(jobId: number | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ["nextOrderNumber", jobId],
+    queryFn: () => queryNextOrderNumber(jobId!),
+    enabled: enabled && !!jobId,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
     retry: false,
   });
 }

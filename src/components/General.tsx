@@ -1,12 +1,55 @@
-import { Card, Col, FloatingLabel, Form, Row } from "react-bootstrap";
+import { useEffect, useRef } from "react";
+import {
+  Button,
+  Card,
+  Col,
+  FloatingLabel,
+  Form,
+  InputGroup,
+  Row,
+  Spinner,
+} from "react-bootstrap";
 import useEmployees from "../hooks/useEmployees";
 import useOrderStore from "../stores/useOrderStore";
+import { useContextStore } from "../stores/useContextStore";
+import { useNextOrderNumber } from "../hooks/useOrder";
 
 type Props = {};
 
 function General({}: Props) {
   const { data: employees } = useEmployees();
   const { orderData, setChangeOrderData } = useOrderStore();
+  const jobId = useContextStore((s) => s.jobId);
+  const changeOrderId = useContextStore((s) => s.changeOrderId);
+
+  // For an existing order, wait until its data is in the store before deciding
+  // whether it needs a proposed number.
+  const isOrderLoaded =
+    !changeOrderId || orderData.id === Number(changeOrderId);
+  const needsNumber = isOrderLoaded && !orderData.orderNumber;
+
+  // Propose only once per mount, so clearing the field on purpose doesn't refill it.
+  const hasProposed = useRef(false);
+
+  const {
+    data: nextNumber,
+    isFetching: isFetchingNextNumber,
+    refetch: refetchNextNumber,
+  } = useNextOrderNumber(jobId, needsNumber && !hasProposed.current);
+
+  useEffect(() => {
+    if (!nextNumber || isFetchingNextNumber || hasProposed.current) return;
+    if (!useOrderStore.getState().orderData.orderNumber) {
+      setChangeOrderData("orderNumber", nextNumber.nextOrderNumber);
+    }
+    hasProposed.current = true;
+  }, [nextNumber, isFetchingNextNumber]);
+
+  const handleSuggestNumber = async () => {
+    hasProposed.current = true;
+    const { data } = await refetchNextNumber();
+    if (data) setChangeOrderData("orderNumber", data.nextOrderNumber);
+  };
 
   const employeesFiltered = employees?.filter(
     (emp) =>
@@ -72,6 +115,46 @@ function General({}: Props) {
                     onChange={(e) => setChangeOrderData("orderDate", e.target.value)}
                   />
                 </FloatingLabel>
+              </Col>
+              <Col>
+                <InputGroup>
+                  <FloatingLabel
+                    controlId="floatingInputOrderNumber"
+                    label="Order #"
+                  >
+                    <Form.Control
+                      type="number"
+                      min={1}
+                      step={1}
+                      placeholder="#"
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "20px",
+                      }}
+                      value={orderData.orderNumber ?? ""}
+                      onChange={(e) =>
+                        setChangeOrderData(
+                          "orderNumber",
+                          e.target.value === "" ? null : Number(e.target.value),
+                        )
+                      }
+                    />
+                  </FloatingLabel>
+                  <Button
+                    variant="outline-secondary"
+                    className="no-print"
+                    title="Suggest the next order number for this job"
+                    onClick={handleSuggestNumber}
+                    disabled={!jobId || isFetchingNextNumber}
+                  >
+                    {isFetchingNextNumber ? (
+                      <Spinner animation="border" size="sm" />
+                    ) : (
+                      "Suggest"
+                    )}
+                  </Button>
+                </InputGroup>
               </Col>
             </Row>
           </Card.Body>

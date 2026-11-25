@@ -3,7 +3,7 @@ export type ChangeOrder = {
   jobId: number | null;
   employeeId: number | null;
   orderDate: string;
-  orderNumber: number;
+  orderNumber: number | null;
   amount: number;
   orderStatus: string;
   tasks: Task[];
@@ -99,6 +99,11 @@ export type JobData = {
   number: String;
   name: String;
 }
+
+export type NextOrderNumberResponse = {
+  jobId: number;
+  nextOrderNumber: number;
+};
 
 export interface ChangeOrderRequestPayload {
   order: ChangeOrder; // O el DTO de creación de la orden

@@ -87,7 +87,7 @@ function Home({}: Props) {
 
   const handlePrint = useReactToPrint({
     contentRef: componenteRef,
-    documentTitle: `Change Order ${orderData.orderDate}`,
+    documentTitle: `Change Order #${orderData.orderNumber ?? ""} ${orderData.orderDate}`,
   });
 
   const isSavingReport =
